@@ -553,7 +553,7 @@ const App = () => {
                 >
                   <div className="truncate">
                     <p className="text-xs font-bold truncate">{f.title}</p>
-                    <p className="text-[9px] opacity-40 uppercase">{f.comp}</p>
+                    <p className={`text-[9px] uppercase ${activeFilm === f.id ? 'text-slate-500' : (isDarkMode ? 'text-slate-300' : 'text-slate-500')}`}>{f.comp}</p>
                   </div>
                   {db[f.id]?.status === 'concluido' && <CheckCircle2 size={12} className="text-emerald-500" />}
                 </button>
