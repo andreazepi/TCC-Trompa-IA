@@ -146,6 +146,7 @@ const PROTOCOLO = {
 };
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+let cachedGeminiTarget = null;
 
 const App = () => {
   const [activeDay, setActiveDay] = useState(1);
@@ -195,50 +196,97 @@ const App = () => {
       systemInstruction: { parts: [{ text: systemPrompt }] }
     };
 
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
-    let lastError = null;
+    const apiVersions = ['v1beta', 'v1'];
+    const preferredModels = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
 
-    for (const model of models) {
-      let delay = 1000;
-      const retries = 3;
+    const pickModelFromList = (modelsList) => {
+      const names = (modelsList || [])
+        .filter((model) => (model?.supportedGenerationMethods || []).includes('generateContent'))
+        .map((model) => String(model.name || '').replace(/^models\//, ''));
 
-      for (let i = 0; i < retries; i++) {
+      for (const preferred of preferredModels) {
+        if (names.includes(preferred)) {
+          return preferred;
+        }
+      }
+
+      return names[0] || null;
+    };
+
+    const resolveGeminiTarget = async () => {
+      if (cachedGeminiTarget) {
+        return cachedGeminiTarget;
+      }
+
+      let lastResolveError = null;
+
+      for (const version of apiVersions) {
         try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-            let serverMessage = '';
-            try {
-              const errorBody = await response.json();
-              serverMessage = errorBody?.error?.message || '';
-            } catch (_) {
-              serverMessage = '';
-            }
-            throw new Error(`Falha na API (${response.status})${serverMessage ? `: ${serverMessage}` : ''}`);
+          const listUrl = `https://generativelanguage.googleapis.com/${version}/models?key=${apiKey}`;
+          const listResponse = await fetch(listUrl, { method: 'GET' });
+          if (!listResponse.ok) {
+            throw new Error(`ListModels falhou (${listResponse.status})`);
           }
 
-          const result = await response.json();
-          const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (!text) {
-            throw new Error('A API respondeu sem conteúdo de texto.');
+          const listBody = await listResponse.json();
+          const model = pickModelFromList(listBody.models);
+          if (model) {
+            cachedGeminiTarget = { version, model };
+            return cachedGeminiTarget;
           }
-          return text;
         } catch (error) {
-          lastError = error;
-          if (i < retries - 1) {
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            delay *= 2;
+          lastResolveError = error;
+        }
+      }
+
+      throw lastResolveError || new Error('Não foi possível descobrir um modelo Gemini suportado.');
+    };
+
+    let delay = 1000;
+    const retries = 3;
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        const target = await resolveGeminiTarget();
+        const url = `https://generativelanguage.googleapis.com/${target.version}/models/${target.model}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          let serverMessage = '';
+          try {
+            const errorBody = await response.json();
+            serverMessage = errorBody?.error?.message || '';
+          } catch (_) {
+            serverMessage = '';
           }
+
+          if (response.status === 404) {
+            // Se o modelo sair de catálogo, limpa cache e tenta resolver novamente.
+            cachedGeminiTarget = null;
+          }
+
+          throw new Error(`Falha na API (${response.status})${serverMessage ? `: ${serverMessage}` : ''}`);
+        }
+
+        const result = await response.json();
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+          throw new Error('A API respondeu sem conteúdo de texto.');
+        }
+        return text;
+      } catch (error) {
+        if (i < retries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          delay *= 2;
+        } else {
+          throw error;
         }
       }
     }
-
-    throw lastError || new Error('Falha ao chamar a API do Gemini.');
   };
 
   const generateAiHistory = async () => {
