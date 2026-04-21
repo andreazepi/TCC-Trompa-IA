@@ -3,7 +3,7 @@ import {
   Music, History, Users, ClipboardCheck,
   Plus, CheckCircle2,
   Microscope, Clock, PlayCircle, BookOpen, Trash2,
-  Sparkles, Loader2, ChevronUp, ChevronDown
+  Sparkles, Loader2, ChevronUp, ChevronDown, Moon, Sun, Menu, X
 } from 'lucide-react';
 
 // Constantes de dados
@@ -153,7 +153,11 @@ const App = () => {
   const [activeFilm, setActiveFilm] = useState('sw');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isMissionExpanded, setIsMissionExpanded] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('tcc_horn_theme') === 'dark');
   const toggleMissionPanel = () => setIsMissionExpanded((prev) => !prev);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+  const toggleTheme = () => setIsDarkMode((prev) => !prev);
   const [db, setDb] = useState(() => {
     const saved = localStorage.getItem('tcc_horn_pro_final_v2');
     if (saved) {
@@ -184,6 +188,28 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem('tcc_horn_pro_final_v2', JSON.stringify(db));
   }, [db]);
+
+  useEffect(() => {
+    localStorage.setItem('tcc_horn_theme', isDarkMode ? 'dark' : 'light');
+    document.body.classList.toggle('dark-mode', isDarkMode);
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    document.body.style.overflow = isSidebarOpen ? 'hidden' : '';
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isSidebarOpen]);
 
   // Função auxiliar para chamada Gemini com backoff
   const callGemini = async (prompt, systemPrompt) => {
@@ -437,11 +463,38 @@ const App = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#FDFCFB] text-slate-900 font-sans overflow-hidden">
+    <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#0B1120] text-slate-100' : 'bg-[#FDFCFB] text-slate-900'}`}>
+
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        className={`fixed left-4 top-4 z-50 md:hidden rounded-full p-3 shadow-lg transition-colors ${isDarkMode ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}`}
+        aria-label={isSidebarOpen ? 'Fechar menu lateral' : 'Abrir menu lateral'}
+      >
+        {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+      </button>
+
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className={`fixed right-4 top-4 z-50 rounded-full p-3 shadow-lg transition-colors ${isDarkMode ? 'bg-amber-400 text-slate-900' : 'bg-slate-900 text-white'}`}
+        aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo noturno'}
+      >
+        {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
+      {isSidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          aria-label="Fechar menu lateral"
+        />
+      )}
 
       {/* SIDEBAR */}
-      <aside className="w-80 bg-[#121417] text-slate-400 flex flex-col border-r border-slate-800 shadow-2xl z-20">
-        <div className="p-6 bg-[#0B0D0E] border-b border-slate-800">
+      <aside className={`fixed inset-y-0 left-0 z-40 w-[86vw] max-w-80 flex flex-col border-r shadow-2xl transition-transform duration-300 md:static md:w-80 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} ${isDarkMode ? 'bg-[#0F172A] text-slate-300 border-slate-700' : 'bg-[#121417] text-slate-400 border-slate-800'}`}>
+        <div className={`p-6 border-b ${isDarkMode ? 'bg-[#111827] border-slate-700' : 'bg-[#0B0D0E] border-slate-800'}`}>
           <h1 className="text-xl font-black text-white flex items-center gap-2">
             <Music className="text-amber-500" /> TCC TROMPA AI
           </h1>
@@ -455,8 +508,11 @@ const App = () => {
               {Object.keys(PROTOCOLO).map(day => (
                 <button
                   key={day}
-                  onClick={() => setActiveDay(parseInt(day))}
-                  className={`w-full text-left p-2.5 rounded-xl text-[11px] transition-all flex items-start gap-3 border ${activeDay === parseInt(day) ? 'bg-amber-600/20 text-amber-400 border-amber-600/30' : 'border-transparent hover:bg-white/5'}`}
+                  onClick={() => {
+                    setActiveDay(parseInt(day));
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full text-left p-2.5 rounded-xl text-[11px] transition-all flex items-start gap-3 border ${activeDay === parseInt(day) ? (isDarkMode ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-amber-600/20 text-amber-400 border-amber-600/30') : 'border-transparent hover:bg-white/5'}`}
                 >
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${activeDay === parseInt(day) ? 'bg-amber-500 text-white border-amber-400' : 'border-slate-700 text-slate-500 font-bold'}`}>
                     {day}
@@ -473,8 +529,11 @@ const App = () => {
               {films.map(f => (
                 <button
                   key={f.id}
-                  onClick={() => setActiveFilm(f.id)}
-                  className={`w-full text-left p-3 rounded-xl transition-all flex justify-between items-center ${activeFilm === f.id ? 'bg-white text-slate-900 shadow-lg scale-105' : 'hover:bg-white/5'}`}
+                  onClick={() => {
+                    setActiveFilm(f.id);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full text-left p-3 rounded-xl transition-all flex justify-between items-center ${activeFilm === f.id ? (isDarkMode ? 'bg-slate-100 text-slate-900 shadow-lg scale-105' : 'bg-white text-slate-900 shadow-lg scale-105') : 'hover:bg-white/5'}`}
                 >
                   <div className="truncate">
                     <p className="text-xs font-bold truncate">{f.title}</p>
@@ -493,7 +552,7 @@ const App = () => {
           </div>
         </div>
 
-        <div className="p-4 bg-[#0B0D0E] border-t border-slate-800">
+        <div className={`p-4 border-t ${isDarkMode ? 'bg-[#111827] border-slate-700' : 'bg-[#0B0D0E] border-slate-800'}`}>
           <button
             onClick={exportFinal}
             className="w-full bg-amber-600 hover:bg-amber-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl transition-all active:scale-95"
@@ -504,10 +563,10 @@ const App = () => {
       </aside>
 
       {/* ÁREA DE CONTEÚDO */}
-      <main className="flex-1 overflow-y-auto flex flex-col relative">
+      <main className={`flex-1 overflow-y-auto flex flex-col relative transition-colors duration-300 ${isDarkMode ? 'bg-[#0B1120]' : 'bg-transparent'}`}>
 
         {/* MANUAL DO DIA - RETRÁTIL */}
-        <section className={`bg-amber-50 border-b-2 border-amber-100 sticky top-0 z-10 transition-all duration-300 ${isMissionExpanded ? 'p-4' : 'p-3'}`}>
+        <section className={`sticky top-0 z-10 transition-all duration-300 border-b-2 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-amber-50 border-amber-100'} ${isMissionExpanded ? 'p-4' : 'p-3'}`}>
           <div className="max-w-4xl mx-auto">
             <div
               className="flex items-center justify-between gap-4 cursor-pointer"
@@ -527,22 +586,22 @@ const App = () => {
                   <Clock size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tighter flex items-center gap-2 leading-tight">
+                  <h2 className={`text-sm font-black uppercase tracking-tighter flex items-center gap-2 leading-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                     Missão do Dia {activeDay}
-                    {!isMissionExpanded && <span className="text-[10px] font-normal lowercase bg-amber-200 px-2 rounded-full hidden sm:inline">clique para expandir</span>}
+                    {!isMissionExpanded && <span className={`text-[10px] font-normal lowercase px-2 rounded-full hidden sm:inline ${isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-amber-200 text-slate-800'}`}>clique para expandir</span>}
                   </h2>
-                  <p className="text-xs font-bold text-amber-700 uppercase truncate max-w-[500px]">{PROTOCOLO[activeDay].titulo}</p>
+                  <p className={`text-xs font-bold uppercase truncate max-w-[500px] ${isDarkMode ? 'text-amber-300' : 'text-amber-700'}`}>{PROTOCOLO[activeDay].titulo}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                {isAiLoading && <div className="animate-pulse text-amber-600 font-bold text-[10px] flex items-center gap-2 uppercase shrink-0"><Loader2 className="animate-spin" size={14}/> IA...</div>}
+                {isAiLoading && <div className={`animate-pulse font-bold text-[10px] flex items-center gap-2 uppercase shrink-0 ${isDarkMode ? 'text-amber-300' : 'text-amber-600'}`}><Loader2 className="animate-spin" size={14}/> IA...</div>}
                 <button 
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     toggleMissionPanel();
                   }}
-                  className="p-2 hover:bg-amber-200 rounded-full transition-colors text-amber-700 shrink-0"
+                  className={`p-2 rounded-full transition-colors shrink-0 ${isDarkMode ? 'text-amber-300 hover:bg-slate-800' : 'text-amber-700 hover:bg-amber-200'}`}
                 >
                   {isMissionExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </button>
@@ -552,8 +611,8 @@ const App = () => {
             {isMissionExpanded && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 {(PROTOCOLO[activeDay]?.instrucoes || []).map((inst, i) => (
-                  <div key={i} className="flex gap-3 bg-white/60 p-2.5 rounded-xl border border-amber-200/50 text-[11px] leading-relaxed shadow-sm">
-                    <span className="w-5 h-5 bg-amber-200 text-amber-700 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px]">{i + 1}</span>
+                  <div key={i} className={`flex gap-3 p-2.5 rounded-xl border text-[11px] leading-relaxed shadow-sm ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-slate-100' : 'bg-white/60 border-amber-200/50 text-slate-900'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px] ${isDarkMode ? 'bg-slate-700 text-amber-200' : 'bg-amber-200 text-amber-700'}`}>{i + 1}</span>
                     <p>{inst}</p>
                   </div>
                 ))}
@@ -563,53 +622,53 @@ const App = () => {
         </section>
 
         {/* EDITOR */}
-        <div className="p-10 pb-40">
+        <div className="p-4 sm:p-6 lg:p-10 pb-32 sm:pb-40 pt-20 md:pt-10">
           <div className="max-w-4xl mx-auto space-y-12">
 
             {activeFilm === 'final' ? (
-              <div className="space-y-10 animate-in fade-in duration-500">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">Capítulo 5 & Conclusões</h3>
+              <div className={`space-y-10 animate-in fade-in duration-500 ${isDarkMode ? 'text-slate-100' : ''}`}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+                  <h3 className={`text-3xl sm:text-5xl font-black tracking-tighter uppercase ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>Capítulo 5 & Conclusões</h3>
                   <button
                     onClick={generateAiSummary}
                     disabled={isAiLoading}
-                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50"
+                    className={`px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all disabled:opacity-50 ${isDarkMode ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
                   >
                     <Sparkles size={16} /> Sintetizar Pesquisa ✨
                   </button>
                 </div>
                 <div className="space-y-6">
                   <label className="block">
-                    <span className="text-xs font-black uppercase text-slate-400 mb-2 block">Síntese de Estratégias Pedagógicas (Sugestão IA ✨)</span>
+                    <span className={`text-xs font-black uppercase mb-2 block ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>Síntese de Estratégias Pedagógicas (Sugestão IA ✨)</span>
                     <textarea
                       value={db.final_pedagogy || ''}
                       onChange={(e) => setDb(prev => ({ ...prev, final_pedagogy: e.target.value }))}
                       placeholder="Reúna aqui os principais exercícios e métodos..."
-                      className="w-full h-80 p-8 rounded-[2.5rem] border-2 border-emerald-100 bg-white shadow-xl outline-none focus:border-emerald-500 text-sm leading-relaxed"
+                      className={`w-full h-80 p-8 rounded-[2.5rem] border-2 shadow-xl outline-none text-sm leading-relaxed transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-amber-400' : 'border-emerald-100 bg-white focus:border-emerald-500'}`}
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs font-black uppercase text-slate-400 mb-2 block">Considerações Finais do TCC</span>
+                    <span className={`text-xs font-black uppercase mb-2 block ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>Considerações Finais do TCC</span>
                     <textarea
                       value={db.final_conclusion || ''}
                       onChange={(e) => setDb(prev => ({ ...prev, final_conclusion: e.target.value }))}
                       placeholder="Qual o balanço final da sua investigação?"
-                      className="w-full h-48 p-8 rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-xl outline-none focus:border-slate-900 text-sm leading-relaxed"
+                      className={`w-full h-48 p-8 rounded-[2.5rem] border-2 shadow-xl outline-none text-sm leading-relaxed transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-amber-400' : 'border-slate-200 bg-white focus:border-slate-900'}`}
                     />
                   </label>
                 </div>
               </div>
             ) : (
               <>
-                <div className="flex justify-between items-end border-b-2 border-slate-100 pb-8">
+                <div className={`flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end border-b-2 pb-8 ${isDarkMode ? 'border-slate-700' : 'border-slate-100'}`}>
                   <div>
-                    <h3 className="text-6xl font-black text-slate-900 tracking-tighter leading-none">{db[activeFilm]?.title}</h3>
-                    <p className="text-lg text-slate-400 font-bold mt-2 uppercase tracking-widest">{db[activeFilm]?.comp}</p>
+                    <h3 className={`text-4xl sm:text-6xl font-black tracking-tighter leading-none ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{db[activeFilm]?.title}</h3>
+                    <p className={`text-sm sm:text-lg font-bold mt-2 uppercase tracking-widest ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>{db[activeFilm]?.comp}</p>
                   </div>
                   <select
                     value={db[activeFilm]?.status || 'pendente'}
                     onChange={(e) => updateFilmData('status', e.target.value)}
-                    className="bg-white border-2 border-slate-200 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest focus:border-amber-500 outline-none cursor-pointer"
+                    className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer ${isDarkMode ? 'bg-slate-800 border-2 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-2 border-slate-200 focus:border-amber-500'}`}
                   >
                     <option value="pendente">Não Iniciado</option>
                     <option value="fazendo">Em Execução</option>
@@ -618,16 +677,16 @@ const App = () => {
                 </div>
 
                 {/* Investigação Histórica */}
-                <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
-                  <div className="p-8 bg-slate-50 border-b flex items-center justify-between gap-4">
+                <section className={`rounded-[2.5rem] border shadow-xl overflow-hidden ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <div className={`p-8 border-b flex items-center justify-between gap-4 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50'}`}>
                     <div className="flex items-center gap-4">
                       <History className="text-amber-500" size={24} />
-                      <h4 className="font-black text-slate-800 uppercase tracking-tight">Investigação Histórica ✨</h4>
+                      <h4 className={`font-black uppercase tracking-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>Investigação Histórica ✨</h4>
                     </div>
                     <button
                       onClick={generateAiHistory}
                       disabled={isAiLoading}
-                      className="bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-amber-200 transition-all flex items-center gap-2 disabled:opacity-50"
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-2 disabled:opacity-50 ${isDarkMode ? 'bg-amber-400 text-slate-900 hover:bg-amber-300' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}
                     >
                       <Sparkles size={14} /> Expandir com IA ✨
                     </button>
@@ -635,7 +694,7 @@ const App = () => {
                   <div className="p-10 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estilo & Período (Expansão IA ✨)</label>
+                        <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>Estilo & Período (Expansão IA ✨)</label>
                         <textarea
                           value={db[activeFilm]?.history?.style || ''}
                           onChange={(e) => {
@@ -643,11 +702,11 @@ const App = () => {
                             updateFilmData('history', h);
                           }}
                           placeholder="Descreva a orquestração..."
-                          className="w-full h-40 p-5 rounded-2xl bg-slate-100/50 border border-slate-100 text-sm outline-none focus:bg-white"
+                          className={`w-full h-40 p-5 rounded-2xl border text-sm outline-none transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-slate-100/50 border-slate-100 focus:bg-white'}`}
                         />
                       </div>
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Solistas Originais (Gravação)</label>
+                        <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>Solistas Originais (Gravação)</label>
                         <textarea
                           value={db[activeFilm]?.history?.musicians || ''}
                           onChange={(e) => {
@@ -655,7 +714,7 @@ const App = () => {
                             updateFilmData('history', h);
                           }}
                           placeholder="Quem tocou? Escola de trompa?"
-                          className="w-full h-40 p-5 rounded-2xl bg-slate-100/50 border border-slate-100 text-sm outline-none focus:bg-white"
+                          className={`w-full h-40 p-5 rounded-2xl border text-sm outline-none transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-slate-100/50 border-slate-100 focus:bg-white'}`}
                         />
                       </div>
                     </div>
@@ -665,79 +724,79 @@ const App = () => {
                 {/* Laboratório de Excertos */}
                 <section className="space-y-8">
                   <div className="flex justify-between items-center px-4">
-                    <h4 className="text-2xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
+                    <h4 className={`text-2xl font-black flex items-center gap-3 uppercase tracking-tighter ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
                       <Microscope size={28} className="text-amber-500" /> Laboratório Técnico
                     </h4>
                     <button
                       onClick={addExcerpt}
-                      className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 hover:bg-slate-800 shadow-2xl active:scale-95 transition-all"
+                      className={`px-8 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-2xl active:scale-95 transition-all ${isDarkMode ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
                     >
                       <Plus size={18} /> Novo Trecho
                     </button>
                   </div>
 
                   {(db[activeFilm]?.excerpts || []).map((ex, idx) => (
-                    <div key={ex.id} className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-6 duration-500">
-                      <div className="p-6 bg-[#1A1C20] flex justify-between items-center text-white">
-                        <div className="flex items-center gap-6">
+                    <div key={ex.id} className={`rounded-[2.5rem] border shadow-2xl overflow-hidden animate-in slide-in-from-bottom-6 duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                      <div className={`p-4 sm:p-6 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center ${isDarkMode ? 'bg-slate-800 text-slate-100' : 'bg-[#1A1C20] text-white'}`}>
+                        <div className="flex items-center gap-4 sm:gap-6 min-w-0 w-full lg:w-auto">
                           <span className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center font-black text-sm">{idx + 1}</span>
                           <input
                             value={ex.titulo || ''}
                             onChange={(e) => updateEx(idx, 'titulo', e.target.value)}
-                            className="bg-transparent text-white font-black text-lg outline-none border-b-2 border-white/10 focus:border-amber-500 w-[300px]"
+                            className={`bg-transparent font-black text-base sm:text-lg outline-none border-b-2 min-w-0 flex-1 lg:w-[300px] ${isDarkMode ? 'text-slate-100 border-white/10 focus:border-amber-400' : 'text-white border-white/10 focus:border-amber-500'}`}
                             placeholder="Nome do Trecho"
                           />
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto lg:shrink-0">
                           <button
                             onClick={() => generateAiAnalysis(idx)}
                             disabled={isAiLoading || !ex.titulo}
-                            className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-2 disabled:opacity-30"
+                            className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 ${isDarkMode ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-white/10 hover:bg-white/20 text-white'}`}
                           >
                             <Sparkles size={14} /> Analisar com IA ✨
                           </button>
-                          <button onClick={() => removeEx(idx)} className="text-white/20 hover:text-red-500 transition-colors">
+                          <button onClick={() => removeEx(idx)} className={`transition-colors self-center sm:self-auto ${isDarkMode ? 'text-slate-400 hover:text-red-400' : 'text-white/20 hover:text-red-500'}`}>
                             <Trash2 size={20} />
                           </button>
                         </div>
                       </div>
 
-                      <div className="p-10 space-y-10">
+                      <div className={`p-10 space-y-10 ${isDarkMode ? 'text-slate-100' : ''}`}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                            <h5 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2"><Clock size={14} /> Localização</h5>
+                          <div className={`p-6 rounded-3xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                            <h5 className={`text-[10px] font-black uppercase mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}><Clock size={14} /> Localização</h5>
                             <div className="space-y-4">
-                              <input value={ex.minFilme || ''} onChange={(e) => updateEx(idx, 'minFilme', e.target.value)} className="w-full p-3 bg-white border rounded-xl text-xs font-bold" placeholder="Tempo no Filme" />
-                              <input value={ex.minAudio || ''} onChange={(e) => updateEx(idx, 'minAudio', e.target.value)} className="w-full p-3 bg-white border rounded-xl text-xs font-bold" placeholder="Tempo no Áudio OST" />
+                              <input value={ex.minFilme || ''} onChange={(e) => updateEx(idx, 'minFilme', e.target.value)} className={`w-full p-3 border rounded-xl text-xs font-bold outline-none transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Tempo no Filme" />
+                              <input value={ex.minAudio || ''} onChange={(e) => updateEx(idx, 'minAudio', e.target.value)} className={`w-full p-3 border rounded-xl text-xs font-bold outline-none transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Tempo no Áudio OST" />
                             </div>
                           </div>
-                          <div className="md:col-span-2 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                            <h5 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2"><BookOpen size={14} /> Análise Musicológica (Score)</h5>
-                            <div className="grid grid-cols-2 gap-4">
-                              <textarea value={ex.tessitura || ''} onChange={(e) => updateEx(idx, 'tessitura', e.target.value)} className="h-24 p-4 rounded-xl text-xs bg-white border outline-none" placeholder="Tessitura & Registro..." />
-                              <textarea value={ex.intervalos || ''} onChange={(e) => updateEx(idx, 'intervalos', e.target.value)} className="h-24 p-4 rounded-xl text-xs bg-white border outline-none" placeholder="Saltos & Intervalos..." />
+                          <div className={`md:col-span-2 p-6 rounded-3xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                            <h5 className={`text-[10px] font-black uppercase mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}><BookOpen size={14} /> Análise Musicológica (Score)</h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <textarea value={ex.tessitura || ''} onChange={(e) => updateEx(idx, 'tessitura', e.target.value)} className={`h-24 p-4 rounded-xl text-xs border outline-none transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Tessitura & Registro..." />
+                              <textarea value={ex.intervalos || ''} onChange={(e) => updateEx(idx, 'intervalos', e.target.value)} className={`h-24 p-4 rounded-xl text-xs border outline-none transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Saltos & Intervalos..." />
                             </div>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
                           <div className="space-y-3">
-                            <h5 className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-2"><PlayCircle size={16} /> Performance Original</h5>
-                            <textarea value={ex.interpretacao || ''} onChange={(e) => updateEx(idx, 'interpretacao', e.target.value)} className="w-full h-32 p-5 rounded-[2rem] bg-amber-50/20 border border-amber-100 outline-none text-sm italic" placeholder="Interpretacao..." />
+                            <h5 className={`text-[10px] font-black uppercase flex items-center gap-2 ${isDarkMode ? 'text-amber-300' : 'text-amber-600'}`}><PlayCircle size={16} /> Performance Original</h5>
+                            <textarea value={ex.interpretacao || ''} onChange={(e) => updateEx(idx, 'interpretacao', e.target.value)} className={`w-full h-32 p-5 rounded-[2rem] border outline-none text-sm italic transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-amber-50/20 border-amber-100 text-slate-900'}`} placeholder="Interpretacao..." />
                           </div>
                           <div className="space-y-3">
-                            <h5 className="text-[10px] font-black text-emerald-600 uppercase flex items-center gap-2"><Users size={16} /> Sua Prática no Metal</h5>
-                            <textarea value={ex.dificuldadePratica || ''} onChange={(e) => updateEx(idx, 'dificuldadePratica', e.target.value)} className="w-full h-32 p-5 rounded-[2rem] bg-emerald-50/20 border border-emerald-100 outline-none text-sm" placeholder="Sua experiência..." />
+                            <h5 className={`text-[10px] font-black uppercase flex items-center gap-2 ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}><Users size={16} /> Sua Prática no Metal</h5>
+                            <textarea value={ex.dificuldadePratica || ''} onChange={(e) => updateEx(idx, 'dificuldadePratica', e.target.value)} className={`w-full h-32 p-5 rounded-[2rem] border outline-none text-sm transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-emerald-50/20 border-emerald-100 text-slate-900'}`} placeholder="Sua experiência..." />
                           </div>
                         </div>
 
-                        <div className="pt-8 border-t border-slate-100">
-                          <label className="text-[10px] font-black text-slate-400 uppercase block mb-3">Estratégia Pedagógica Sugerida (Sugestão IA ✨)</label>
+                        <div className={`pt-8 border-t ${isDarkMode ? 'border-slate-700' : 'border-slate-100'}`}>
+                          <label className={`text-[10px] font-black uppercase block mb-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}>Estratégia Pedagógica Sugerida (Sugestão IA ✨)</label>
                           <textarea
                             value={ex.estrategiaPedagogica || ''}
                             onChange={(e) => updateEx(idx, 'estrategiaPedagogica', e.target.value)}
                             placeholder="Métodos e exercícios sugeridos pela IA..."
-                            className="w-full h-32 p-5 rounded-2xl bg-slate-900 text-amber-200 text-xs outline-none border-none shadow-2xl leading-relaxed"
+                            className={`w-full h-32 p-5 rounded-2xl text-xs outline-none shadow-2xl leading-relaxed border transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 text-amber-200 focus:border-amber-400' : 'bg-slate-900 text-amber-200 border-slate-900'}`}
                           />
                         </div>
                       </div>
@@ -746,8 +805,8 @@ const App = () => {
                 </section>
 
                 {/* Fichas de Colegas */}
-                <section className="bg-emerald-600 rounded-[2.5rem] shadow-2xl overflow-hidden mb-20 text-white">
-                  <div className="p-8 bg-black/10 border-b border-white/10 flex items-center gap-4">
+                <section className={`rounded-[2.5rem] shadow-2xl overflow-hidden mb-20 ${isDarkMode ? 'bg-emerald-500 text-slate-950' : 'bg-emerald-600 text-white'}`}>
+                  <div className={`p-8 border-b flex items-center gap-4 ${isDarkMode ? 'bg-black/10 border-black/10' : 'bg-black/10 border-white/10'}`}>
                     <ClipboardCheck size={28} />
                     <h4 className="font-black text-xl uppercase tracking-tighter">Resumo das Fichas</h4>
                   </div>
@@ -756,7 +815,7 @@ const App = () => {
                       value={db[activeFilm]?.peerSummary || ''}
                       onChange={(e) => updateFilmData('peerSummary', e.target.value)}
                       placeholder="Consolide aqui o relato dos colegas..."
-                      className="w-full h-48 p-8 rounded-[2rem] bg-white/10 border border-white/20 outline-none placeholder:text-white/30 text-sm leading-relaxed"
+                      className={`w-full h-48 p-8 rounded-[2rem] outline-none placeholder:text-white/30 text-sm leading-relaxed border transition-colors ${isDarkMode ? 'bg-white/10 border-black/10 text-slate-950' : 'bg-white/10 border-white/20 text-white'}`}
                     />
                   </div>
                 </section>
@@ -767,10 +826,10 @@ const App = () => {
         </div>
 
         {/* FOOTER */}
-        <div className="fixed bottom-0 right-0 left-80 bg-white/80 backdrop-blur-md p-4 px-10 border-t flex justify-between items-center z-30">
+        <div className={`fixed bottom-0 right-0 left-0 md:left-80 backdrop-blur-md p-3 sm:p-4 px-4 sm:px-10 border-t flex justify-between items-center z-30 transition-colors ${isDarkMode ? 'bg-slate-950/85 border-slate-700' : 'bg-white/80 border-slate-200'}`}>
           <div className="flex items-center gap-3">
             <span className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
-            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Sincronização Ativa ✨</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Sincronização Ativa ✨</span>
           </div>
           <button onClick={() => {
             if (confirm("ATENÇÃO: Limpar base de dados?")) {
