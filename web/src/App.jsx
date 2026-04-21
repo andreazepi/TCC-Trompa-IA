@@ -152,6 +152,7 @@ const App = () => {
   const [activeFilm, setActiveFilm] = useState('sw');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isMissionExpanded, setIsMissionExpanded] = useState(true);
+  const toggleMissionPanel = () => setIsMissionExpanded((prev) => !prev);
   const [db, setDb] = useState(() => {
     const saved = localStorage.getItem('tcc_horn_pro_final_v2');
     if (saved) {
@@ -436,8 +437,19 @@ const App = () => {
         {/* MANUAL DO DIA - RETRÁTIL */}
         <section className={`bg-amber-50 border-b-2 border-amber-100 p-4 transition-all duration-300 sticky top-0 z-10 overflow-hidden ${isMissionExpanded ? 'max-h-[500px]' : 'max-h-[64px]'}`}>
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => setIsMissionExpanded(!isMissionExpanded)}>
+            <div
+              className="flex items-center justify-between gap-4 cursor-pointer"
+              onClick={toggleMissionPanel}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  toggleMissionPanel();
+                }
+              }}
+            >
+              <div className="flex items-center gap-4 flex-1">
                 <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white shadow-md shrink-0">
                   <Clock size={20} />
                 </div>
@@ -452,7 +464,11 @@ const App = () => {
               <div className="flex items-center gap-4">
                 {isAiLoading && <div className="animate-pulse text-amber-600 font-bold text-[10px] flex items-center gap-2 uppercase shrink-0"><Loader2 className="animate-spin" size={14}/> IA...</div>}
                 <button 
-                  onClick={() => setIsMissionExpanded(!isMissionExpanded)}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleMissionPanel();
+                  }}
                   className="p-2 hover:bg-amber-200 rounded-full transition-colors text-amber-700 shrink-0"
                 >
                   {isMissionExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
