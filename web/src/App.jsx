@@ -190,31 +190,55 @@ const App = () => {
       throw new Error("Defina VITE_GEMINI_API_KEY no arquivo .env para usar IA.");
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
       systemInstruction: { parts: [{ text: systemPrompt }] }
     };
 
-    let retries = 5;
-    let delay = 1000;
+    const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastError = null;
 
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error('Falha na API');
-        const result = await response.json();
-        return result.candidates?.[0]?.content?.parts?.[0]?.text;
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2;
+    for (const model of models) {
+      let delay = 1000;
+      const retries = 3;
+
+      for (let i = 0; i < retries; i++) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            let serverMessage = '';
+            try {
+              const errorBody = await response.json();
+              serverMessage = errorBody?.error?.message || '';
+            } catch (_) {
+              serverMessage = '';
+            }
+            throw new Error(`Falha na API (${response.status})${serverMessage ? `: ${serverMessage}` : ''}`);
+          }
+
+          const result = await response.json();
+          const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) {
+            throw new Error('A API respondeu sem conteúdo de texto.');
+          }
+          return text;
+        } catch (error) {
+          lastError = error;
+          if (i < retries - 1) {
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            delay *= 2;
+          }
+        }
       }
     }
+
+    throw lastError || new Error('Falha ao chamar a API do Gemini.');
   };
 
   const generateAiHistory = async () => {
@@ -435,13 +459,14 @@ const App = () => {
       <main className="flex-1 overflow-y-auto flex flex-col relative">
 
         {/* MANUAL DO DIA - RETRÁTIL */}
-        <section className={`bg-amber-50 border-b-2 border-amber-100 p-4 transition-all duration-300 sticky top-0 z-10 overflow-hidden ${isMissionExpanded ? 'max-h-[500px]' : 'max-h-[64px]'}`}>
+        <section className={`bg-amber-50 border-b-2 border-amber-100 sticky top-0 z-10 transition-all duration-300 ${isMissionExpanded ? 'p-4' : 'p-3'}`}>
           <div className="max-w-4xl mx-auto">
             <div
               className="flex items-center justify-between gap-4 cursor-pointer"
               onClick={toggleMissionPanel}
               role="button"
               tabIndex={0}
+              aria-expanded={isMissionExpanded}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
