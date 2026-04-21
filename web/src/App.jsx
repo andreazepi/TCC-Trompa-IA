@@ -223,7 +223,7 @@ const App = () => {
     };
 
     const apiVersions = ['v1beta', 'v1'];
-    const preferredModels = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+    const preferredModels = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
     const pickModelFromList = (modelsList) => {
       const names = (modelsList || [])
@@ -295,6 +295,18 @@ const App = () => {
             cachedGeminiTarget = null;
           }
 
+          const isHardQuotaExceeded =
+            response.status === 429 &&
+            /quota exceeded|limit:\s*0|exceeded your current quota/i.test(serverMessage);
+
+          if (isHardQuotaExceeded) {
+            const friendlyQuotaError = new Error(
+              'A cota gratuita da Gemini para esta chave foi esgotada. Gere uma nova API key no AI Studio ou aguarde o reset da cota e tente novamente.'
+            );
+            friendlyQuotaError.noRetry = true;
+            throw friendlyQuotaError;
+          }
+
           throw new Error(`Falha na API (${response.status})${serverMessage ? `: ${serverMessage}` : ''}`);
         }
 
@@ -305,6 +317,10 @@ const App = () => {
         }
         return text;
       } catch (error) {
+        if (error?.noRetry) {
+          throw error;
+        }
+
         if (i < retries - 1) {
           await new Promise((resolve) => setTimeout(resolve, delay));
           delay *= 2;
