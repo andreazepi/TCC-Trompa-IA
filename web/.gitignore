@@ -1,4 +1,19 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Vite cache
+.vite/
+
+# Log files
+*.log
+
+# Local environment variables
 .env
-web/build_log.txt
+.env.local
+.env.*.local
+
+# Custom build log
+build_log.txt
