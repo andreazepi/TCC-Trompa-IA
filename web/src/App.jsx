@@ -331,6 +331,55 @@ const App = () => {
     }
   };
 
+  const buildOfflineHistorySuggestion = (filmData) => {
+    const base = (filmData?.history?.style || '').trim();
+    return [
+      `Sugestao automatica (modo offline) para ${filmData.title} - ${filmData.comp}.`,
+      '',
+      'Contexto historico e estilo:',
+      `A trilha de ${filmData.title} evidencia uma escrita orquestral cinematografica com papel expressivo da trompa, combinando projeção, identidade timbrica e funcao dramatica na narrativa.`,
+      '',
+      'Foco para o TCC:',
+      '- Relacionar a escrita da trompa com o periodo estetico do compositor.',
+      '- Descrever como o timbre da trompa constrói heroismo, nobreza ou tensao.',
+      '- Registrar diferencas entre funcao melodica, harmonica e de reforco de textura.',
+      '',
+      base ? `Notas ja registradas para integrar na versao final: ${base}` : 'Complete com dados de gravacao, solistas e referencias bibliograficas.'
+    ].join('\n');
+  };
+
+  const buildOfflineAnalysisSuggestion = (filmData, ex) => {
+    return [
+      `Sugestao tecnica (modo offline) para o excerto "${ex.titulo}" - ${filmData.title}.`,
+      '',
+      'Diagnostico tecnico:',
+      '- Priorizar estabilidade de coluna de ar e centro de nota nos ataques.',
+      '- Isolar saltos intervalares com metrônomo em andamento reduzido.',
+      '- Trabalhar resistencia com repeticoes curtas e pausas controladas.',
+      '',
+      'Plano de estudo sugerido:',
+      '1. Aquecimento com flexibilidade (5-8 min).',
+      '2. Estudo ritmico falado do trecho antes de tocar.',
+      '3. Execucao em blocos de 2 a 4 compassos com gravacao.',
+      '4. Consolidacao em andamento de performance.',
+      '',
+      'Referencias pedagogicas:',
+      '- Kopprasch: articulacao e resistencia.',
+      '- Farkas: embocadura, apoio e eficiencia sonora.',
+      '- Estudos de ligaduras e intervalos para controle de salto.'
+    ].join('\n');
+  };
+
+  const buildOfflineSummarySuggestion = () => {
+    return [
+      'Sintese automatica (modo offline) para o Capitulo 5.',
+      '',
+      'A investigacao evidencia que a performance da trompa no cinema exige adaptacao continua entre lirismo, projeção e precisao tecnica. Em John Williams, observa-se forte heranca sinfonica com protagonismo melodico da trompa. Em Howard Shore, o instrumento reforca identidade timbrica ligada a nobreza e profundidade dramatica. Em Hans Zimmer, destaca-se a demanda por resistencia, ataques incisivos e densidade sonora em contextos de alta energia.',
+      '',
+      'Como eixo pedagogico, os dados apontam para tres frentes: (1) planejamento de estudo por metas tecnicas objetivas; (2) treinamento de flexibilidade, articulacao e controle de registro; (3) simulacao de contexto de gravacao para consolidar consistencia. Assim, a trompa no repertorio cinematografico contemporaneo deixa de ser apenas cor orquestral e assume funcao narrativa estrutural, exigindo do performer maturidade musical e preparo fisico especifico.'
+    ].join('\n');
+  };
+
   const generateAiHistory = async () => {
     const filmData = db[activeFilm];
     if (!filmData.title) return;
@@ -346,8 +395,9 @@ const App = () => {
         updateFilmData('history', h);
       }
     } catch (e) {
-      alert(e.message);
-      console.error(e);
+      console.warn('Gemini indisponivel; aplicando sugestao offline de historico.', e);
+      const h = { ...db[activeFilm].history, style: buildOfflineHistorySuggestion(filmData) };
+      updateFilmData('history', h);
     } finally {
       setIsAiLoading(false);
     }
@@ -373,8 +423,8 @@ const App = () => {
         updateEx(index, 'estrategiaPedagogica', result);
       }
     } catch (e) {
-      alert(e.message);
-      console.error(e);
+      console.warn('Gemini indisponivel; aplicando sugestao offline de analise.', e);
+      updateEx(index, 'estrategiaPedagogica', buildOfflineAnalysisSuggestion(db[activeFilm], ex));
     } finally {
       setIsAiLoading(false);
     }
@@ -397,8 +447,8 @@ const App = () => {
         setDb(prev => ({ ...prev, final_pedagogy: result }));
       }
     } catch (e) {
-      alert(e.message);
-      console.error(e);
+      console.warn('Gemini indisponivel; aplicando sugestao offline de sintese.', e);
+      setDb(prev => ({ ...prev, final_pedagogy: buildOfflineSummarySuggestion() }));
     } finally {
       setIsAiLoading(false);
     }
