@@ -5,6 +5,7 @@ import {
   Microscope, Clock, PlayCircle, BookOpen, Trash2,
   Sparkles, Loader2, ChevronUp, ChevronDown, Moon, Sun, Menu, X
 } from 'lucide-react';
+import { Analytics } from "@vercel/analytics/react";
 
 // Constantes de dados
 const films = [
@@ -530,6 +531,7 @@ const App = () => {
 
   return (
     <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#0B1120] text-slate-100' : 'bg-[#FDFCFB] text-slate-900'}`}>
+      <Analytics />
 
       <button
         type="button"
