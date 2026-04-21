@@ -764,7 +764,7 @@ const App = () => {
                       <div className={`p-10 space-y-10 ${isDarkMode ? 'text-slate-100' : ''}`}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                           <div className={`p-6 rounded-3xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
-                            <h5 className={`text-[10px] font-black uppercase mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}><Clock size={14} /> Localização</h5>
+                            <h5 className={`text-[10px] font-black uppercase mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-400'}`}><Clock size={14} /> Localização(Minutagem)</h5>
                             <div className="space-y-4">
                               <input value={ex.minFilme || ''} onChange={(e) => updateEx(idx, 'minFilme', e.target.value)} className={`w-full p-3 border rounded-xl text-xs font-bold outline-none transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Tempo no Filme" />
                               <input value={ex.minAudio || ''} onChange={(e) => updateEx(idx, 'minAudio', e.target.value)} className={`w-full p-3 border rounded-xl text-xs font-bold outline-none transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Tempo no Áudio OST" />
@@ -785,7 +785,7 @@ const App = () => {
                             <textarea value={ex.interpretacao || ''} onChange={(e) => updateEx(idx, 'interpretacao', e.target.value)} className={`w-full h-32 p-5 rounded-[2rem] border outline-none text-sm italic transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-amber-50/20 border-amber-100 text-slate-900'}`} placeholder="Interpretacao..." />
                           </div>
                           <div className="space-y-3">
-                            <h5 className={`text-[10px] font-black uppercase flex items-center gap-2 ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}><Users size={16} /> Sua Prática no Metal</h5>
+                            <h5 className={`text-[10px] font-black uppercase flex items-center gap-2 ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}><Users size={16} /> Sua Prática na Trompa</h5>
                             <textarea value={ex.dificuldadePratica || ''} onChange={(e) => updateEx(idx, 'dificuldadePratica', e.target.value)} className={`w-full h-32 p-5 rounded-[2rem] border outline-none text-sm transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-100 focus:border-amber-400' : 'bg-emerald-50/20 border-emerald-100 text-slate-900'}`} placeholder="Sua experiência..." />
                           </div>
                         </div>
@@ -815,7 +815,7 @@ const App = () => {
                       value={db[activeFilm]?.peerSummary || ''}
                       onChange={(e) => updateFilmData('peerSummary', e.target.value)}
                       placeholder="Consolide aqui o relato dos colegas..."
-                      className={`w-full h-48 p-8 rounded-[2rem] outline-none placeholder:text-white/30 text-sm leading-relaxed border transition-colors ${isDarkMode ? 'bg-white/10 border-black/10 text-slate-950' : 'bg-white/10 border-white/20 text-white'}`}
+                      className={`w-full h-48 p-8 rounded-[2rem] outline-none text-sm leading-relaxed border transition-colors ${isDarkMode ? 'bg-white/10 border-black/10 text-slate-950 placeholder:text-slate-900/70' : 'bg-white/10 border-white/20 text-white placeholder:text-white/75'}`}
                     />
                   </div>
                 </section>
