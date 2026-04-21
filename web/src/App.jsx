@@ -3,7 +3,7 @@ import {
   Music, History, Users, ClipboardCheck,
   Plus, CheckCircle2,
   Microscope, Clock, PlayCircle, BookOpen, Trash2,
-  Sparkles, Loader2
+  Sparkles, Loader2, ChevronUp, ChevronDown
 } from 'lucide-react';
 
 // Constantes de dados
@@ -151,6 +151,7 @@ const App = () => {
   const [activeDay, setActiveDay] = useState(1);
   const [activeFilm, setActiveFilm] = useState('sw');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isMissionExpanded, setIsMissionExpanded] = useState(true);
   const [db, setDb] = useState(() => {
     const saved = localStorage.getItem('tcc_horn_pro_final_v2');
     if (saved) {
@@ -432,33 +433,43 @@ const App = () => {
       {/* ÁREA DE CONTEÚDO */}
       <main className="flex-1 overflow-y-auto flex flex-col relative">
 
-        {/* MANUAL DO DIA */}
-        <section className="bg-amber-50 border-b-2 border-amber-100 p-8 sticky top-0 z-10 shadow-sm">
+        {/* MANUAL DO DIA - RETRÁTIL */}
+        <section className={`bg-amber-50 border-b-2 border-amber-100 p-4 transition-all duration-300 sticky top-0 z-10 overflow-hidden ${isMissionExpanded ? 'max-h-[500px]' : 'max-h-[64px]'}`}>
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                  <Clock size={28} />
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => setIsMissionExpanded(!isMissionExpanded)}>
+                <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white shadow-md shrink-0">
+                  <Clock size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Missão do Dia {activeDay}</h2>
-                  <p className="text-xs font-bold text-amber-700 uppercase">{PROTOCOLO[activeDay]?.titulo}</p>
+                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tighter flex items-center gap-2 leading-tight">
+                    Missão do Dia {activeDay}
+                    {!isMissionExpanded && <span className="text-[10px] font-normal lowercase bg-amber-200 px-2 rounded-full hidden sm:inline">clique para expandir</span>}
+                  </h2>
+                  <p className="text-xs font-bold text-amber-700 uppercase truncate max-w-[500px]">{PROTOCOLO[activeDay].titulo}</p>
                 </div>
               </div>
-              {isAiLoading && (
-                <div className="flex items-center gap-2 text-amber-600 font-bold text-sm animate-pulse">
-                  <Loader2 className="animate-spin" size={18} /> Processando IA...
-                </div>
-              )}
+              <div className="flex items-center gap-4">
+                {isAiLoading && <div className="animate-pulse text-amber-600 font-bold text-[10px] flex items-center gap-2 uppercase shrink-0"><Loader2 className="animate-spin" size={14}/> IA...</div>}
+                <button 
+                  onClick={() => setIsMissionExpanded(!isMissionExpanded)}
+                  className="p-2 hover:bg-amber-200 rounded-full transition-colors text-amber-700 shrink-0"
+                >
+                  {isMissionExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(PROTOCOLO[activeDay]?.instrucoes || []).map((inst, i) => (
-                <div key={i} className="flex gap-3 bg-white/60 p-3 rounded-xl border border-amber-200/50 text-[11px] leading-relaxed">
-                  <span className="w-5 h-5 bg-amber-200 text-amber-700 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px]">{i + 1}</span>
-                  <p>{inst}</p>
-                </div>
-              ))}
-            </div>
+
+            {isMissionExpanded && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                {(PROTOCOLO[activeDay]?.instrucoes || []).map((inst, i) => (
+                  <div key={i} className="flex gap-3 bg-white/60 p-2.5 rounded-xl border border-amber-200/50 text-[11px] leading-relaxed shadow-sm">
+                    <span className="w-5 h-5 bg-amber-200 text-amber-700 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px]">{i + 1}</span>
+                    <p>{inst}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

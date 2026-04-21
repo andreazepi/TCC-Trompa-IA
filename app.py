@@ -83,6 +83,6 @@ with tab_json:
 
 st.divider()
 st.info(
-    "Cole sua logica do Gemini no arquivo tcc_app/tcc_logic.py, na funcao executar_logica. "
-    "A interface e o deploy continuam os mesmos."
+    "Cole sua logica do Gemini no arquivo tcc_logic.py, na funcao executar_logica. "
+    "A interface Streamlit continua a mesma; o frontend React fica em web/src/App.jsx."
 )
